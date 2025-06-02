@@ -1,52 +1,101 @@
 # Hermes Installer
 
-## Versão 1.0.30035
+[![Versão](https://img.shields.io/badge/versão-1.0.30035-blue.svg)](https://github.com/MarcosBertacchini/hermes-installer)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Licença](https://img.shields.io/badge/licença-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-ativo-success.svg)](https://github.com/MarcosBertacchini/hermes-installer)
 
-### Descrição
-O Hermes Installer é uma ferramenta para gerenciamento de dependências Python. Ele automatiza o processo de instalação de pacotes Python, criando um ambiente virtual isolado e gerenciando as dependências de forma eficiente.
+## 📋 Descrição
 
-### Funcionalidades
-- Criação automática de ambiente virtual Python
-- Download e armazenamento local de pacotes
-- Verificação de pacotes faltantes e desatualizados
-- Instalação de dependências em ambiente isolado
-- Sistema de logs para rastreamento de operações
-- Interface colorida para melhor visualização
+O Hermes Installer é uma ferramenta robusta para gerenciamento de dependências Python. Ele automatiza o processo de instalação de pacotes, criando um ambiente virtual isolado e garantindo que todas as dependências sejam instaladas corretamente.
 
-### Requisitos
-- Python 3.6 ou superior
-- Conexão com a internet para download inicial de pacotes
-- Permissões de escrita no diretório de instalação
+## ✨ Funcionalidades
 
-### Estrutura de Pastas
+- ✅ Criação automática de ambiente virtual
+- 📦 Download e instalação de pacotes Python
+- 🔄 Verificação de dependências
+- 📝 Sistema de logs detalhado
+- 🎨 Interface colorida no terminal
+- 🔍 Verificação de integridade dos pacotes
+- 🔄 Atualização automática do pip
+
+## 🚀 Requisitos
+
+- Python 3.8 ou superior
+- Conexão com a internet (para download inicial dos pacotes)
+- Permissões de administrador (para criar ambiente virtual)
+
+## 📁 Estrutura do Projeto
+
 ```
-hermes_installer/
-├── hermes_installer.exe
-├── requirements.txt
-├── logs/
-├── requirements/
-└── venv/
+hermes-installer/
+├── hermes_installer.py    # Script principal
+├── requirements.txt       # Lista de dependências
+├── README.md             # Este arquivo
+├── LICENSE               # Licença MIT
+├── logs/                 # Diretório de logs
+├── requirements/         # Pacotes Python baixados
+└── venv/                # Ambiente virtual Python
 ```
 
-### Como Usar
-1. Execute o arquivo `hermes_installer.exe`
-2. Confirme o início da instalação
-3. Aguarde o processo de verificação e download dos pacotes
-4. Confirme a instalação dos pacotes
-5. Após a conclusão, ative o ambiente virtual:
-   - Windows: `venv\Scripts\activate`
-   - Linux/Mac: `source venv/bin/activate`
+## 🛠️ Instalação
 
-### Logs
-Os logs de execução são armazenados na pasta `logs/` com o formato:
-- Nome: `hermes_installer_YYYYMMDD_HHMMSS.log`
-- Contém informações detalhadas sobre o processo de instalação
-- Útil para diagnóstico de problemas
+1. Clone o repositório:
+```bash
+git clone https://github.com/MarcosBertacchini/hermes-installer.git
+cd hermes-installer
+```
 
-### Notas
-- O instalador cria um ambiente virtual isolado para evitar conflitos com outras instalações Python
-- Os pacotes são baixados e armazenados localmente para instalações futuras
-- Em caso de erro, consulte o arquivo de log para mais detalhes
+2. Execute o instalador:
+```bash
+python hermes_installer.py
+```
 
-### Suporte
-Para reportar problemas ou sugerir melhorias, por favor abra uma issue no repositório do projeto. 
+## 💻 Uso
+
+1. Coloque seu arquivo `requirements.txt` no mesmo diretório do script
+2. Execute o script:
+```bash
+python hermes_installer.py
+```
+3. Siga as instruções na tela
+
+## 📝 Logs
+
+Os logs são armazenados no diretório `logs/` com o formato:
+```
+hermes_installer_YYYYMMDD_HHMMSS.log
+```
+
+## 🔧 Configuração
+
+O script utiliza as seguintes configurações padrão:
+- Diretório de logs: `./logs/`
+- Diretório de pacotes: `./requirements/`
+- Ambiente virtual: `./venv/`
+
+## 🤝 Contribuindo
+
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a Branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👨‍💻 Autor
+
+**Marcos Bertacchini**
+- Email: marcos.bertacchini@live.com
+- GitHub: [@MarcosBertacchini](https://github.com/MarcosBertacchini)
+
+## 🙏 Agradecimentos
+
+- [Python](https://www.python.org/)
+- [pip](https://pip.pypa.io/)
+- [colorama](https://pypi.org/project/colorama/)
+- [tqdm](https://pypi.org/project/tqdm/)
+- [requests](https://pypi.org/project/requests/) 
