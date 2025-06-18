@@ -1,6 +1,6 @@
 # Hermes Installer
 
-[![Versão](https://img.shields.io/badge/versão-1.0.30035-blue.svg)](https://github.com/MarcosBertacchini/hermes-installer)
+[![Versão](https://img.shields.io/badge/versão-1.0.4-blue.svg)](https://github.com/MarcosBertacchini/hermes-installer)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![Licença](https://img.shields.io/badge/licença-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-ativo-success.svg)](https://github.com/MarcosBertacchini/hermes-installer)
@@ -9,15 +9,20 @@
 
 O Hermes Installer é uma ferramenta robusta para gerenciamento de dependências Python. Ele automatiza o processo de instalação de pacotes, criando um ambiente virtual isolado e garantindo que todas as dependências sejam instaladas corretamente.
 
-## ✨ Funcionalidades
+## ✨ Novidades na versão 1.0.4
 
-- ✅ Criação automática de ambiente virtual
-- 📦 Download e instalação de pacotes Python
-- 🔄 Verificação de dependências
-- 📝 Sistema de logs detalhado
-- 🎨 Interface colorida no terminal
-- 🔍 Verificação de integridade dos pacotes
-- 🔄 Atualização automática do pip
+- Novo menu interativo para escolha do tipo de instalação:
+  - Instalar pacotes do projeto (`requirements.txt`)
+  - Instalar pacotes do ambiente de desenvolvimento (tudo que está instalado no seu ambiente Python)
+  - Instalar todos os pacotes do sistema
+- Detecção automática da pasta `requirements/`:
+  - Se existir, permite instalar, atualizar, baixar novos pacotes ou limpar a pasta
+  - Se não existir, cria automaticamente
+- Resumo da operação ao final de cada ação (instalação, download, atualização)
+- Informações claras de como ativar/desativar o ambiente virtual
+- Filtro automático para não baixar/instalar pacotes padrão do Python
+- Melhor tratamento de erros e logs
+- Removida a limitação de só instalar do `requirements.txt` (agora pode instalar do ambiente ou do sistema)
 
 ## 🚀 Requisitos
 
@@ -53,12 +58,24 @@ python hermes_installer.py
 
 ## 💻 Uso
 
-1. Coloque seu arquivo `requirements.txt` no mesmo diretório do script
+1. Coloque seu arquivo `requirements.txt` no mesmo diretório do script (opcional, se quiser instalar do projeto)
 2. Execute o script:
 ```bash
 python hermes_installer.py
 ```
-3. Siga as instruções na tela
+3. Siga as instruções na tela e escolha o tipo de instalação desejado
+
+### Opções do menu interativo
+- Instalar pacotes do projeto (`requirements.txt`)
+- Instalar pacotes do ambiente de desenvolvimento
+- Instalar todos os pacotes do sistema
+- Sair
+
+Se a pasta `requirements/` já existir, você pode:
+- Instalar pacotes existentes
+- Atualizar pacotes existentes
+- Baixar novos pacotes do `requirements.txt`
+- Limpar a pasta e baixar tudo novamente
 
 ## 📝 Logs
 

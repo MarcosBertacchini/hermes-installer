@@ -115,7 +115,7 @@ def exibir_logo():
 ║  {Fore.YELLOW}╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝{Fore.CYAN}  ║
 ║                                                       ║
 ║  {Fore.GREEN}Instalador de Dependências Python{Fore.CYAN}                    ║
-║  {Fore.GREEN}Versão 1.0.30035{Fore.CYAN}                                     ║
+║  {Fore.GREEN}Versão 1.0.4{Fore.CYAN}                                         ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
 """
