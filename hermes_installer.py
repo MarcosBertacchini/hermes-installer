@@ -15,6 +15,7 @@ from colorama import init, Fore, Back, Style
 import logging
 from datetime import datetime
 from importlib.metadata import version, PackageNotFoundError
+import pkg_resources
 
 # Inicializa o colorama
 init(autoreset=True)
@@ -115,210 +116,11 @@ def exibir_logo():
 ║  {Fore.YELLOW}╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝{Fore.CYAN}  ║
 ║                                                       ║
 ║  {Fore.GREEN}Instalador de Dependências Python{Fore.CYAN}                    ║
-║  {Fore.GREEN}Versão 1.0.4{Fore.CYAN}                                         ║
+║  {Fore.GREEN}Versão 1.0.30035{Fore.CYAN}                                     ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
 """
     print(logo)
-
-def escolher_tipo_instalacao():
-    """Permite ao usuário escolher o tipo de instalação."""
-    print(f"\n{Fore.CYAN}=== Escolha o tipo de instalação ==={Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}1. {Fore.WHITE}Instalar pacotes do projeto (requirements.txt)")
-    print(f"{Fore.YELLOW}2. {Fore.WHITE}Instalar pacotes do ambiente de desenvolvimento")
-    print(f"{Fore.YELLOW}3. {Fore.WHITE}Instalar todos os pacotes do sistema")
-    print(f"{Fore.YELLOW}4. {Fore.WHITE}Sair")
-    
-    while True:
-        try:
-            escolha = input(f"\n{Fore.CYAN}Escolha uma opção (1-4): {Style.RESET_ALL}").strip()
-            if escolha in ['1', '2', '3', '4']:
-                return escolha
-            else:
-                print_error("Opção inválida! Escolha 1, 2, 3 ou 4.")
-        except KeyboardInterrupt:
-            print_info("\nOperação cancelada pelo usuário.")
-            sys.exit(0)
-
-def verificar_pasta_requirements():
-    """Verifica se a pasta requirements existe e retorna informações sobre ela."""
-    script_dir = get_script_dir()
-    pasta_requirements = script_dir / "requirements"
-    
-    if not pasta_requirements.exists():
-        return False, None, []
-    
-    # Conta os arquivos na pasta
-    arquivos = list(pasta_requirements.glob("*.whl")) + list(pasta_requirements.glob("*.tar.gz"))
-    return True, pasta_requirements, arquivos
-
-def escolher_acao_pasta_existente(pasta_requirements: Path, arquivos: List[Path]):
-    """Permite ao usuário escolher o que fazer com a pasta requirements existente."""
-    print(f"\n{Fore.CYAN}=== Pasta requirements encontrada ==={Style.RESET_ALL}")
-    print(f"{Fore.GREEN}Pasta: {pasta_requirements}")
-    print(f"{Fore.GREEN}Arquivos encontrados: {len(arquivos)}")
-    
-    if arquivos:
-        print(f"\n{Fore.YELLOW}Arquivos na pasta:")
-        for i, arquivo in enumerate(arquivos[:10], 1):  # Mostra apenas os primeiros 10
-            print(f"  {i}. {arquivo.name}")
-        if len(arquivos) > 10:
-            print(f"  ... e mais {len(arquivos) - 10} arquivos")
-    
-    print(f"\n{Fore.CYAN}Escolha uma opção:{Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}1. {Fore.WHITE}Instalar pacotes existentes na pasta")
-    print(f"{Fore.YELLOW}2. {Fore.WHITE}Atualizar pacotes existentes")
-    print(f"{Fore.YELLOW}3. {Fore.WHITE}Baixar novos pacotes do requirements.txt")
-    print(f"{Fore.YELLOW}4. {Fore.WHITE}Limpar pasta e baixar tudo novamente")
-    print(f"{Fore.YELLOW}5. {Fore.WHITE}Voltar ao menu principal")
-    
-    while True:
-        try:
-            escolha = input(f"\n{Fore.CYAN}Escolha uma opção (1-5): {Style.RESET_ALL}").strip()
-            if escolha in ['1', '2', '3', '4', '5']:
-                return escolha
-            else:
-                print_error("Opção inválida! Escolha 1, 2, 3, 4 ou 5.")
-        except KeyboardInterrupt:
-            print_info("\nOperação cancelada pelo usuário.")
-            sys.exit(0)
-
-def obter_pacotes_ambiente_desenvolvimento():
-    """Obtém os pacotes instalados no ambiente de desenvolvimento."""
-    try:
-        # Lista todos os pacotes instalados
-        result = subprocess.run([sys.executable, "-m", "pip", "list", "--format=freeze"], 
-                              capture_output=True, text=True, check=True)
-        
-        pacotes = []
-        for linha in result.stdout.strip().split('\n'):
-            if linha and '==' in linha:
-                # Remove caracteres especiais e normaliza
-                linha = linha.strip()
-                if not linha.startswith('#') and '==' in linha:
-                    pacotes.append(linha)
-        
-        return pacotes
-    except subprocess.CalledProcessError as e:
-        print_error(f"Erro ao obter pacotes do ambiente: {e}")
-        return []
-
-def obter_pacotes_sistema():
-    """Obtém todos os pacotes Python instalados no sistema."""
-    try:
-        # Lista todos os pacotes instalados globalmente
-        result = subprocess.run([sys.executable, "-m", "pip", "list", "--format=freeze"], 
-                              capture_output=True, text=True, check=True)
-        
-        pacotes = []
-        for linha in result.stdout.strip().split('\n'):
-            if linha and '==' in linha:
-                # Remove caracteres especiais e normaliza
-                linha = linha.strip()
-                if not linha.startswith('#') and '==' in linha:
-                    pacotes.append(linha)
-        
-        return pacotes
-    except subprocess.CalledProcessError as e:
-        print_error(f"Erro ao obter pacotes do sistema: {e}")
-        return []
-
-def processar_pacotes_para_download(pacotes: List[str]) -> List[str]:
-    """Processa e filtra pacotes para download, removendo pacotes padrão do Python."""
-    pacotes_padrao = {
-        'pip', 'setuptools', 'wheel', 'distlib', 'filelock', 'platformdirs',
-        'packaging', 'pyparsing', 'six', 'markupsafe', 'jinja2', 'click',
-        'colorama', 'urllib3', 'certifi', 'charset-normalizer', 'idna',
-        'requests', 'tqdm'
-    }
-    
-    pacotes_filtrados = []
-    for pacote in pacotes:
-        nome_pacote = pacote.split('==')[0].lower()
-        if nome_pacote not in pacotes_padrao:
-            pacotes_filtrados.append(pacote)
-    
-    return pacotes_filtrados
-
-def instalar_pacotes_existentes(pasta_requirements: Path, pip_path: str):
-    """Instala os pacotes que já estão na pasta requirements."""
-    arquivos = list(pasta_requirements.glob("*.whl")) + list(pasta_requirements.glob("*.tar.gz"))
-    
-    if not arquivos:
-        print_warning("Nenhum pacote encontrado na pasta requirements!")
-        return False
-    
-    print_highlight(f"\nInstalando {len(arquivos)} pacotes existentes...")
-    
-    for arquivo in arquivos:
-        try:
-            nome_arquivo = arquivo.name
-            print_info(f"Instalando {nome_arquivo}...")
-            
-            # Instala o arquivo diretamente
-            subprocess.run([pip_path, "install", str(arquivo)], check=True)
-            print_success(f"Pacote {nome_arquivo} instalado com sucesso!")
-            
-        except subprocess.CalledProcessError as e:
-            print_error(f"Erro ao instalar {arquivo.name}: {e}")
-            return False
-    
-    print_success("Todos os pacotes existentes foram instalados com sucesso!")
-    return True
-
-def atualizar_pacotes_existentes(pasta_requirements: Path):
-    """Atualiza os pacotes existentes na pasta requirements."""
-    arquivos = list(pasta_requirements.glob("*.whl")) + list(pasta_requirements.glob("*.tar.gz"))
-    
-    if not arquivos:
-        print_warning("Nenhum pacote encontrado na pasta requirements!")
-        return False
-    
-    print_highlight(f"\nAtualizando {len(arquivos)} pacotes existentes...")
-    
-    for arquivo in arquivos:
-        try:
-            # Extrai nome e versão do arquivo
-            nome_arquivo = arquivo.stem
-            if '-' in nome_arquivo:
-                nome_pacote = nome_arquivo.rsplit('-', 1)[0]
-                versao_atual = nome_arquivo.rsplit('-', 1)[1]
-                
-                print_info(f"Verificando atualizações para {nome_pacote}...")
-                
-                # Tenta baixar a versão mais recente
-                if baixar_pacote(f"{nome_pacote}>=0", pasta_requirements):
-                    # Remove o arquivo antigo
-                    arquivo.unlink()
-                    print_success(f"Pacote {nome_pacote} atualizado!")
-                else:
-                    print_warning(f"Não foi possível atualizar {nome_pacote}")
-                    
-        except Exception as e:
-            print_error(f"Erro ao atualizar {arquivo.name}: {e}")
-    
-    print_success("Atualização de pacotes concluída!")
-    return True
-
-def limpar_pasta_requirements(pasta_requirements: Path):
-    """Remove todos os arquivos da pasta requirements."""
-    arquivos = list(pasta_requirements.glob("*.whl")) + list(pasta_requirements.glob("*.tar.gz"))
-    
-    if not arquivos:
-        print_info("Pasta requirements já está vazia.")
-        return True
-    
-    print_warning(f"Removendo {len(arquivos)} arquivos da pasta requirements...")
-    
-    for arquivo in arquivos:
-        try:
-            arquivo.unlink()
-            print_info(f"Removido: {arquivo.name}")
-        except Exception as e:
-            print_error(f"Erro ao remover {arquivo.name}: {e}")
-    
-    print_success("Pasta requirements limpa com sucesso!")
-    return True
 
 def confirmar_inicio():
     """Pergunta ao usuário se deseja continuar com a instalação."""
@@ -669,6 +471,90 @@ def instalar_pacotes(pip_path: str, pasta_requirements: Path):
     
     print_success("Todos os pacotes foram instalados com sucesso!")
 
+def instalar_pacotes_pasta_existente(pip_path: str, pasta_requirements: Path):
+    """Instala os pacotes que já existem na pasta requirements."""
+    pacotes_disponiveis = listar_pacotes_pasta(pasta_requirements)
+    
+    if not pacotes_disponiveis:
+        print_warning("Nenhum pacote encontrado na pasta requirements!")
+        return False
+    
+    print_highlight(f"\nInstalando {len(pacotes_disponiveis)} pacotes da pasta requirements...")
+    
+    for pacote in pacotes_disponiveis:
+        nome_pacote, versao = extrair_nome_versao(pacote)
+        if not versao:
+            continue
+            
+        print_info(f"Instalando {nome_pacote}...")
+        try:
+            subprocess.run([pip_path, "install", "--no-index", "--find-links", str(pasta_requirements.absolute()), pacote], check=True)
+            print_success(f"✓ {nome_pacote} instalado com sucesso!")
+        except subprocess.CalledProcessError as e:
+            print_error(f"✗ Erro ao instalar {nome_pacote}: {e}")
+            return False
+    
+    print_success("Todos os pacotes da pasta requirements foram instalados com sucesso!")
+    return True
+
+def instalar_pacotes_ambiente_desenvolvimento(pip_path: str, pasta_requirements: Path):
+    """Instala todos os pacotes do ambiente de desenvolvimento atual."""
+    pacotes_ambiente = obter_pacotes_ambiente_desenvolvimento()
+    
+    if not pacotes_ambiente:
+        print_warning("Nenhum pacote encontrado no ambiente de desenvolvimento!")
+        return False
+    
+    print_highlight(f"\nInstalando {len(pacotes_ambiente)} pacotes do ambiente de desenvolvimento...")
+    
+    # Primeiro baixa todos os pacotes
+    print_info("Baixando pacotes do ambiente de desenvolvimento...")
+    for pacote in pacotes_ambiente:
+        if not baixar_pacote(pacote, pasta_requirements):
+            print_warning(f"Falha ao baixar {pacote}, continuando...")
+    
+    # Depois instala todos
+    print_info("Instalando pacotes...")
+    for pacote in pacotes_ambiente:
+        nome_pacote, versao = extrair_nome_versao(pacote)
+        if not versao:
+            continue
+            
+        print_info(f"Instalando {nome_pacote}...")
+        try:
+            subprocess.run([pip_path, "install", "--no-index", "--find-links", str(pasta_requirements.absolute()), pacote], check=True)
+            print_success(f"✓ {nome_pacote} instalado com sucesso!")
+        except subprocess.CalledProcessError as e:
+            print_error(f"✗ Erro ao instalar {nome_pacote}: {e}")
+            return False
+    
+    print_success("Todos os pacotes do ambiente de desenvolvimento foram instalados com sucesso!")
+    return True
+
+def atualizar_pacotes_existentes(pasta_requirements: Path):
+    """Atualiza os pacotes existentes na pasta requirements."""
+    pacotes_existentes = listar_pacotes_pasta(pasta_requirements)
+    
+    if not pacotes_existentes:
+        print_warning("Nenhum pacote encontrado na pasta requirements para atualizar!")
+        return False
+    
+    print_highlight(f"\nAtualizando {len(pacotes_existentes)} pacotes existentes...")
+    
+    # Remove todos os arquivos existentes
+    for arquivo in pasta_requirements.iterdir():
+        if arquivo.is_file() and (arquivo.suffix == '.whl' or arquivo.suffixes == ['.tar', '.gz']):
+            arquivo.unlink()
+            print_info(f"Removido: {arquivo.name}")
+    
+    # Baixa as versões mais recentes
+    for pacote in pacotes_existentes:
+        if not baixar_pacote(pacote, pasta_requirements):
+            print_warning(f"Falha ao atualizar {pacote}")
+    
+    print_success("Pacotes atualizados com sucesso!")
+    return True
+
 def verificar_estrutura_pastas():
     """Verifica e cria todas as pastas necessárias para o funcionamento do Hermes."""
     script_dir = get_script_dir()
@@ -704,274 +590,273 @@ def verificar_estrutura_pastas():
     logger.debug("Verificação de estrutura de pastas concluída com sucesso")
     return True
 
-def mostrar_info_ambiente_virtual():
-    """Mostra informações sobre como ativar o ambiente virtual."""
-    print_highlight("\n=== Informações do Ambiente Virtual ===")
-    print_info("Para ativar o ambiente virtual:")
-    
-    if sys.platform == "win32":
-        print(f"{Fore.CYAN}venv\\Scripts\\activate")
-        print(f"{Fore.CYAN}ou")
-        print(f"{Fore.CYAN}venv\\Scripts\\activate.bat")
-    else:
-        print(f"{Fore.CYAN}source venv/bin/activate")
-    
-    print_info("\nPara desativar o ambiente virtual:")
-    print(f"{Fore.CYAN}deactivate")
-    
-    print_info("\nPara verificar se está ativo:")
-    print(f"{Fore.CYAN}python -c \"import sys; print(sys.prefix)\"")
+def obter_pacotes_ambiente_desenvolvimento() -> List[str]:
+    """Obtém todos os pacotes instalados no ambiente de desenvolvimento atual."""
+    try:
+        pacotes = []
+        for dist in pkg_resources.working_set:
+            nome = dist.project_name
+            versao = dist.version
+            pacotes.append(f"{nome}=={versao}")
+        return sorted(pacotes)
+    except Exception as e:
+        logger.error(f"Erro ao obter pacotes do ambiente de desenvolvimento: {e}")
+        return []
 
-def mostrar_resumo_operacao(tipo_operacao: str, pacotes_processados: int, sucesso: bool):
-    """Mostra um resumo da operação realizada."""
-    print_highlight(f"\n=== Resumo da Operação ===")
-    print_info(f"Tipo de operação: {tipo_operacao}")
-    print_info(f"Pacotes processados: {pacotes_processados}")
+def contar_pacotes_pasta(pasta_requirements: Path) -> int:
+    """Conta quantos pacotes existem na pasta requirements."""
+    if not pasta_requirements.exists():
+        return 0
     
-    if sucesso:
-        print_success("Status: Concluído com sucesso!")
+    # Conta arquivos .whl e .tar.gz
+    whl_files = list(pasta_requirements.glob("*.whl"))
+    tar_files = list(pasta_requirements.glob("*.tar.gz"))
+    return len(whl_files) + len(tar_files)
+
+def listar_pacotes_pasta(pasta_requirements: Path) -> List[str]:
+    """Lista os pacotes disponíveis na pasta requirements."""
+    if not pasta_requirements.exists():
+        return []
+    
+    pacotes = []
+    for arquivo in pasta_requirements.iterdir():
+        if arquivo.is_file() and (arquivo.suffix == '.whl' or arquivo.suffixes == ['.tar', '.gz']):
+            # Extrai nome e versão do nome do arquivo
+            nome_arquivo = arquivo.stem
+            if arquivo.suffixes == ['.tar', '.gz']:
+                nome_arquivo = arquivo.stem.replace('.tar', '')
+            
+            # Remove extensões e números de build
+            partes = nome_arquivo.split('-')
+            if len(partes) >= 2:
+                nome = partes[0]
+                versao = partes[1]
+                pacotes.append(f"{nome}=={versao}")
+    
+    return sorted(pacotes)
+
+def exibir_menu_opcoes(pasta_requirements: Path, pacotes_requirements: List[str], pacotes_ambiente: List[str]):
+    """Exibe menu de opções para o usuário."""
+    print(f"\n{Fore.CYAN}╔═══════════════════════════════════════════════════════╗")
+    print(f"{Fore.CYAN}║                    OPÇÕES DISPONÍVEIS                 ║")
+    print(f"{Fore.CYAN}╚═══════════════════════════════════════════════════════╝")
+    
+    # Verifica se a pasta requirements existe
+    if pasta_requirements.exists():
+        num_pacotes = contar_pacotes_pasta(pasta_requirements)
+        print(f"\n{Fore.GREEN}✓ Pasta 'requirements' encontrada com {num_pacotes} pacotes")
+        
+        if num_pacotes > 0:
+            print(f"{Fore.YELLOW}1. Instalar pacotes existentes na pasta requirements")
+            print(f"{Fore.YELLOW}2. Atualizar pacotes existentes (baixar versões mais recentes)")
+        print(f"{Fore.YELLOW}3. Baixar pacotes do requirements.txt (substituir existentes)")
     else:
-        print_error("Status: Concluído com erros!")
-    
-    if sucesso and tipo_operacao in ["Instalação", "Download e Instalação"]:
-        mostrar_info_ambiente_virtual()
+        print(f"\n{Fore.RED}✗ Pasta 'requirements' não encontrada")
+        print(f"{Fore.YELLOW}1. Criar pasta requirements e baixar pacotes do requirements.txt")
+    print(f"{Fore.YELLOW}4. Baixar pacotes do ambiente de desenvolvimento (apenas baixar)")
+    print(f"{Fore.YELLOW}5. Instalar todos os pacotes do ambiente de desenvolvimento atual")
+    print(f"{Fore.YELLOW}6. Sair")
+    return pasta_requirements.exists()
+
+def obter_escolha_usuario() -> int:
+    """Obtém a escolha do usuário."""
+    while True:
+        try:
+            escolha = input(f"\n{Fore.CYAN}Escolha uma opção (1-6): ").strip()
+            escolha_int = int(escolha)
+            if 1 <= escolha_int <= 6:
+                return escolha_int
+            else:
+                print_error("Opção inválida. Digite um número entre 1 e 6.")
+        except ValueError:
+            print_error("Entrada inválida. Digite um número.")
+
+def confirmar_acao(acao: str) -> bool:
+    """Confirma se o usuário deseja executar uma ação."""
+    print(f"\n{Fore.YELLOW}Deseja {acao}? (S/N)")
+    resposta = input().strip().upper()
+    return resposta == 'S'
 
 def main():
     try:
         # Exibe o logo
         exibir_logo()
+        print_highlight("\n=== Hermes Installer ===")
+        logger.debug("Iniciando Hermes Installer")
         
         # Verifica a estrutura básica de pastas
-        if not verificar_estrutura_pastas():
-            print_error("Erro na verificação da estrutura de pastas. Verifique o log para mais detalhes.")
+        script_dir = get_script_dir()
+        logs_dir = script_dir / "logs"
+        logs_dir.mkdir(exist_ok=True)
+        
+        # Obtém informações sobre o ambiente
+        pasta_requirements = script_dir / "requirements"
+        pacotes_requirements = []
+        pacotes_ambiente = obter_pacotes_ambiente_desenvolvimento()
+        
+        # Verifica se existe requirements.txt
+        requirements_file = script_dir / "requirements.txt"
+        if requirements_file.exists():
+            try:
+                pacotes_requirements = ler_requirements()
+                logger.debug(f"Pacotes lidos do requirements.txt: {len(pacotes_requirements)}")
+            except Exception as e:
+                log_exception(e, "Erro ao ler requirements.txt")
+                pacotes_requirements = []
+        else:
+            print_warning("Arquivo requirements.txt não encontrado!")
+            logger.warning("Arquivo requirements.txt não encontrado")
+        
+        # Exibe informações do ambiente
+        print_info(f"\nAmbiente de desenvolvimento: {len(pacotes_ambiente)} pacotes detectados")
+        if pacotes_requirements:
+            print_info(f"Requirements.txt: {len(pacotes_requirements)} pacotes listados")
+        
+        # Exibe menu de opções
+        pasta_existe = exibir_menu_opcoes(pasta_requirements, pacotes_requirements, pacotes_ambiente)
+        
+        # Obtém a escolha do usuário
+        escolha = obter_escolha_usuario()
+        
+        # Processa a escolha
+        if escolha == 6:
+            print_info("Saindo do Hermes Installer.")
+            sys.exit(0)
+        
+        # Cria o ambiente virtual se necessário
+        if not criar_ambiente_virtual():
+            print_error("Falha ao criar ambiente virtual. Verifique o log para mais detalhes.")
             sys.exit(1)
         
-        # Loop principal do menu
-        while True:
-            # Escolha do tipo de instalação
-            tipo_instalacao = escolher_tipo_instalacao()
-            
-            if tipo_instalacao == '4':  # Sair
-                print_info("Saindo do Hermes Installer...")
-                sys.exit(0)
-            
-            # Verifica se a pasta requirements existe
-            pasta_existe, pasta_requirements, arquivos = verificar_pasta_requirements()
-            
-            if pasta_existe and arquivos:
-                # Pasta existe e tem arquivos - oferece opções
-                acao = escolher_acao_pasta_existente(pasta_requirements, arquivos)
-                
-                if acao == '1':  # Instalar pacotes existentes
-                    if not criar_ambiente_virtual():
-                        print_error("Falha ao criar ambiente virtual.")
-                        continue
-                    
-                    try:
-                        python_path, pip_path = ativar_ambiente_virtual()
-                        if instalar_pacotes_existentes(pasta_requirements, pip_path):
-                            mostrar_resumo_operacao("Instalação", len(arquivos), True)
-                        else:
-                            mostrar_resumo_operacao("Instalação", len(arquivos), False)
-                    except Exception as e:
-                        log_exception(e, "Erro ao instalar pacotes existentes")
-                        mostrar_resumo_operacao("Instalação", 0, False)
-                    continue
-                
-                elif acao == '2':  # Atualizar pacotes existentes
-                    arquivos = list(pasta_requirements.glob("*.whl")) + list(pasta_requirements.glob("*.tar.gz"))
-                    if atualizar_pacotes_existentes(pasta_requirements):
-                        mostrar_resumo_operacao("Atualização", len(arquivos), True)
-                    else:
-                        mostrar_resumo_operacao("Atualização", len(arquivos), False)
-                    continue
-                
-                elif acao == '3':  # Baixar novos pacotes do requirements.txt
-                    try:
-                        pacotes = ler_requirements()
-                        print_info(f"Baixando {len(pacotes)} pacotes do requirements.txt...")
-                        
-                        sucessos = 0
-                        for pacote in pacotes:
-                            if baixar_pacote(pacote, pasta_requirements):
-                                sucessos += 1
-                            else:
-                                print_warning(f"Falha ao baixar {pacote}")
-                        
-                        print_success("Download concluído!")
-                        mostrar_resumo_operacao("Download", len(pacotes), sucessos == len(pacotes))
-                    except Exception as e:
-                        log_exception(e, "Erro ao baixar pacotes do requirements.txt")
-                        mostrar_resumo_operacao("Download", 0, False)
-                    continue
-                
-                elif acao == '4':  # Limpar pasta e baixar tudo novamente
-                    if limpar_pasta_requirements(pasta_requirements):
-                        try:
-                            pacotes = ler_requirements()
-                            print_info(f"Baixando {len(pacotes)} pacotes do requirements.txt...")
-                            
-                            sucessos = 0
-                            for pacote in pacotes:
-                                if baixar_pacote(pacote, pasta_requirements):
-                                    sucessos += 1
-                                else:
-                                    print_warning(f"Falha ao baixar {pacote}")
-                            
-                            print_success("Download concluído!")
-                            mostrar_resumo_operacao("Download", len(pacotes), sucessos == len(pacotes))
-                        except Exception as e:
-                            log_exception(e, "Erro ao baixar pacotes do requirements.txt")
-                            mostrar_resumo_operacao("Download", 0, False)
-                    continue
-                
-                elif acao == '5':  # Voltar ao menu principal
-                    continue
-            
+        # Ativa o ambiente virtual
+        try:
+            python_path, pip_path = ativar_ambiente_virtual()
+            logger.debug(f"Ambiente virtual ativado. Python: {python_path}, Pip: {pip_path}")
+        except Exception as e:
+            log_exception(e, "Erro ao ativar ambiente virtual")
+            sys.exit(1)
+        
+        # Atualiza o pip
+        print_info("Atualizando pip...")
+        try:
+            subprocess.run([pip_path, "install", "--upgrade", "pip"], check=True)
+            logger.debug("Pip atualizado com sucesso")
+        except Exception as e:
+            log_exception(e, "Erro ao atualizar pip pela internet")
+            # Tentar instalar pip localmente
+            print_warning("Não foi possível atualizar o pip pela internet. Tentando instalar versão local do pip...")
+            pip_local = None
+            for arquivo in pasta_requirements.iterdir():
+                if arquivo.is_file() and arquivo.name.startswith("pip-") and (arquivo.suffix == ".whl" or arquivo.suffixes == [".tar", ".gz"]):
+                    pip_local = str(arquivo)
+                    break
+            if pip_local:
+                try:
+                    subprocess.run([pip_path, "install", "--upgrade", pip_local], check=True)
+                    print_success("Pip instalado/atualizado localmente com sucesso!")
+                    logger.debug("Pip instalado/atualizado localmente com sucesso")
+                except Exception as e2:
+                    log_exception(e2, "Falha ao instalar pip localmente")
+                    print_error("Falha ao instalar o pip localmente. Verifique sua conexão ou o arquivo local.")
+                    sys.exit(1)
             else:
-                # Pasta não existe ou está vazia - cria e baixa pacotes
-                if not pasta_existe:
-                    pasta_requirements = criar_pasta_requirements()
+                print_error("Arquivo do pip não encontrado na pasta requirements. Não foi possível atualizar o pip.")
+                sys.exit(1)
+        
+        # Executa a ação escolhida
+        sucesso = None
+        
+        if escolha == 1:
+            if pasta_existe and contar_pacotes_pasta(pasta_requirements) > 0:
+                # Instalar pacotes existentes
+                if confirmar_acao("instalar os pacotes existentes na pasta requirements"):
+                    sucesso = instalar_pacotes_pasta_existente(pip_path, pasta_requirements)
+            else:
+                # Criar pasta e baixar do requirements.txt
+                if not pacotes_requirements:
+                    print_error("Nenhum pacote encontrado no requirements.txt!")
+                    sys.exit(1)
                 
-                if tipo_instalacao == '1':  # Pacotes do projeto
-                    try:
-                        pacotes = ler_requirements()
-                        print_info(f"Baixando {len(pacotes)} pacotes do requirements.txt...")
-                        
-                        sucessos = 0
-                        for pacote in pacotes:
-                            if baixar_pacote(pacote, pasta_requirements):
-                                sucessos += 1
-                            else:
-                                print_warning(f"Falha ao baixar {pacote}")
-                        
-                        print_success("Download concluído!")
-                        mostrar_resumo_operacao("Download", len(pacotes), sucessos == len(pacotes))
-                        
-                        # Pergunta se deseja instalar
-                        print_info("\nDeseja instalar os pacotes agora? (s/n)")
-                        if input().lower() == 's':
-                            if not criar_ambiente_virtual():
-                                print_error("Falha ao criar ambiente virtual.")
-                                continue
-                            
-                            try:
-                                python_path, pip_path = ativar_ambiente_virtual()
-                                instalar_pacotes(pip_path, pasta_requirements)
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes), True)
-                            except Exception as e:
-                                log_exception(e, "Erro ao instalar pacotes")
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes), False)
-                        
-                    except Exception as e:
-                        log_exception(e, "Erro ao processar pacotes do projeto")
-                        mostrar_resumo_operacao("Download", 0, False)
-                
-                elif tipo_instalacao == '2':  # Pacotes do ambiente de desenvolvimento
-                    try:
-                        pacotes = obter_pacotes_ambiente_desenvolvimento()
-                        if not pacotes:
-                            print_warning("Nenhum pacote encontrado no ambiente de desenvolvimento.")
-                            continue
-                        
-                        # Filtra pacotes padrão
-                        pacotes_filtrados = processar_pacotes_para_download(pacotes)
-                        print_info(f"Encontrados {len(pacotes)} pacotes no ambiente de desenvolvimento.")
-                        print_info(f"Após filtro: {len(pacotes_filtrados)} pacotes para download.")
-                        
-                        if not pacotes_filtrados:
-                            print_warning("Nenhum pacote relevante encontrado após filtro.")
-                            continue
-                        
-                        print_info(f"Baixando {len(pacotes_filtrados)} pacotes do ambiente de desenvolvimento...")
-                        
-                        sucessos = 0
-                        for pacote in pacotes_filtrados:
-                            if baixar_pacote(pacote, pasta_requirements):
-                                sucessos += 1
-                            else:
-                                print_warning(f"Falha ao baixar {pacote}")
-                        
-                        print_success("Download concluído!")
-                        mostrar_resumo_operacao("Download", len(pacotes_filtrados), sucessos == len(pacotes_filtrados))
-                        
-                        # Pergunta se deseja instalar
-                        print_info("\nDeseja instalar os pacotes agora? (s/n)")
-                        if input().lower() == 's':
-                            if not criar_ambiente_virtual():
-                                print_error("Falha ao criar ambiente virtual.")
-                                continue
-                            
-                            try:
-                                python_path, pip_path = ativar_ambiente_virtual()
-                                instalar_pacotes(pip_path, pasta_requirements)
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes_filtrados), True)
-                            except Exception as e:
-                                log_exception(e, "Erro ao instalar pacotes")
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes_filtrados), False)
-                        
-                    except Exception as e:
-                        log_exception(e, "Erro ao processar pacotes do ambiente de desenvolvimento")
-                        mostrar_resumo_operacao("Download", 0, False)
-                
-                elif tipo_instalacao == '3':  # Pacotes do sistema
-                    try:
-                        pacotes = obter_pacotes_sistema()
-                        if not pacotes:
-                            print_warning("Nenhum pacote encontrado no sistema.")
-                            continue
-                        
-                        # Filtra pacotes padrão
-                        pacotes_filtrados = processar_pacotes_para_download(pacotes)
-                        print_info(f"Encontrados {len(pacotes)} pacotes no sistema.")
-                        print_info(f"Após filtro: {len(pacotes_filtrados)} pacotes para download.")
-                        
-                        if not pacotes_filtrados:
-                            print_warning("Nenhum pacote relevante encontrado após filtro.")
-                            continue
-                        
-                        print_info(f"Baixando {len(pacotes_filtrados)} pacotes do sistema...")
-                        
-                        sucessos = 0
-                        for pacote in pacotes_filtrados:
-                            if baixar_pacote(pacote, pasta_requirements):
-                                sucessos += 1
-                            else:
-                                print_warning(f"Falha ao baixar {pacote}")
-                        
-                        print_success("Download concluído!")
-                        mostrar_resumo_operacao("Download", len(pacotes_filtrados), sucessos == len(pacotes_filtrados))
-                        
-                        # Pergunta se deseja instalar
-                        print_info("\nDeseja instalar os pacotes agora? (s/n)")
-                        if input().lower() == 's':
-                            if not criar_ambiente_virtual():
-                                print_error("Falha ao criar ambiente virtual.")
-                                continue
-                            
-                            try:
-                                python_path, pip_path = ativar_ambiente_virtual()
-                                instalar_pacotes(pip_path, pasta_requirements)
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes_filtrados), True)
-                            except Exception as e:
-                                log_exception(e, "Erro ao instalar pacotes")
-                                mostrar_resumo_operacao("Download e Instalação", len(pacotes_filtrados), False)
-                        
-                    except Exception as e:
-                        log_exception(e, "Erro ao processar pacotes do sistema")
-                        mostrar_resumo_operacao("Download", 0, False)
+                if confirmar_acao("criar pasta requirements e baixar pacotes do requirements.txt"):
+                    pasta_requirements.mkdir(exist_ok=True)
+                    print_info("Baixando pacotes do requirements.txt...")
+                    for pacote in pacotes_requirements:
+                        baixar_pacote(pacote, pasta_requirements)
+                    
+                    if confirmar_acao("instalar os pacotes baixados"):
+                        sucesso = instalar_pacotes(pip_path, pasta_requirements)
+        
+        elif escolha == 2:
+            # Atualizar pacotes existentes
+            if confirmar_acao("atualizar os pacotes existentes"):
+                sucesso = atualizar_pacotes_existentes(pasta_requirements)
+                if sucesso and confirmar_acao("instalar os pacotes atualizados"):
+                    sucesso = instalar_pacotes_pasta_existente(pip_path, pasta_requirements)
+        
+        elif escolha == 3:
+            # Baixar do requirements.txt (substituir existentes)
+            if not pacotes_requirements:
+                print_error("Nenhum pacote encontrado no requirements.txt!")
+                sys.exit(1)
             
-            # Pergunta se deseja continuar
-            print_info("\nDeseja realizar outra operação? (s/n)")
-            if input().lower() != 's':
-                print_info("Saindo do Hermes Installer...")
-                break
+            if confirmar_acao("baixar pacotes do requirements.txt (substituindo existentes)"):
+                pasta_requirements.mkdir(exist_ok=True)
+                # Remove arquivos existentes
+                for arquivo in pasta_requirements.iterdir():
+                    if arquivo.is_file() and (arquivo.suffix == '.whl' or arquivo.suffixes == ['.tar', '.gz']):
+                        arquivo.unlink()
+                
+                print_info("Baixando pacotes do requirements.txt...")
+                for pacote in pacotes_requirements:
+                    baixar_pacote(pacote, pasta_requirements)
+                
+                if confirmar_acao("instalar os pacotes baixados"):
+                    sucesso = instalar_pacotes(pip_path, pasta_requirements)
+        
+        elif escolha == 4:
+            # Baixar pacotes do ambiente de desenvolvimento (apenas baixar)
+            if not pacotes_ambiente:
+                print_error("Nenhum pacote encontrado no ambiente de desenvolvimento!")
+                sys.exit(1)
+            if confirmar_acao("baixar todos os pacotes do ambiente de desenvolvimento (apenas baixar)"):
+                pasta_requirements.mkdir(exist_ok=True)
+                print_info("Baixando pacotes do ambiente de desenvolvimento...")
+                for pacote in pacotes_ambiente:
+                    baixar_pacote(pacote, pasta_requirements)
+                print_success("Todos os pacotes do ambiente de desenvolvimento foram baixados!")
+                sucesso = True
+        
+        elif escolha == 5:
+            # Instalar pacotes do ambiente de desenvolvimento
+            if not pacotes_ambiente:
+                print_error("Nenhum pacote encontrado no ambiente de desenvolvimento!")
+                sys.exit(1)
+            if confirmar_acao("instalar todos os pacotes do ambiente de desenvolvimento"):
+                pasta_requirements.mkdir(exist_ok=True)
+                sucesso = instalar_pacotes_ambiente_desenvolvimento(pip_path, pasta_requirements)
+        
+        # Resultado final
+        if sucesso:
+            print_success("\n✓ Download concluída com sucesso!")
+            logger.debug("Download concluída com sucesso")
+            print_highlight("\nPara ativar o ambiente virtual:")
+            if sys.platform == "win32":
+                print(f"{Fore.CYAN}venv\\Scripts\\activate")
+            else:
+                print(f"{Fore.CYAN}source venv/bin/activate")
+        elif sucesso is False:
+            print_error("\n✗ Instalação falhou. Verifique o log para mais detalhes.")
+            logger.error("Instalação falhou")
+            sys.exit(1)
+        else:
+            print_info("\nAção cancelada pelo usuário.")
+            logger.info("Ação cancelada pelo usuário")
             
-    except KeyboardInterrupt:
-        print_info("\nOperação cancelada pelo usuário.")
-        sys.exit(0)
+    except subprocess.CalledProcessError as e:
+        log_exception(e, "Erro durante a instalação")
+        sys.exit(1)
     except Exception as e:
-        log_exception(e, "Erro inesperado no programa principal")
+        log_exception(e, "Erro inesperado")
         sys.exit(1)
     finally:
         logger.debug("Finalizando Hermes Installer")

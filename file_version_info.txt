@@ -40,4 +40,5 @@ VSVersionInfo(
       ]), 
     VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]
-) 
+)
+# Observação: Esta versão inclui fallback para instalação offline/local do pip a partir da pasta requirements. 
